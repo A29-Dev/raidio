@@ -38,4 +38,18 @@ RADIO utilizes a local ai to interpret live audio feeds.
 
 ```python worker.py```
 
+## Requirements
+
+Please ensure you have the following set up on your dev environment. This project is developed on Windows, however all Requirements have alternatives on Mac and Linux.
+
+- Install all python packages in *requirements.txt*
+- Run ```python -m spacy download en_core_web_sm```
+- Install FFmpeg and FFplay and set them in your PATH files
+- Install memurai
+- Install Postgress 
+
+## Disclaimer
+This is a personal project and is not currently in development for commercial purposes. No data is permanently downloaded on the host system while running. 
+
+All AI processing in RAIDIO is done locally, the only connectivity to the internet is when you choose to stream audio content from an online source. 
 
