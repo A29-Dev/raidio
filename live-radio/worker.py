@@ -3,6 +3,7 @@ import redis, psycopg
 import wave, array, math
 from faster_whisper import WhisperModel
 import spacy
+import subprocess, os, sys, signal
 from collections import deque
 from rich.live import Live
 from rich.layout import Layout
@@ -12,6 +13,8 @@ from rich.text import Text
 from rich.console import Group
 from colorama import Fore, Style, init as colorama_init
 
+
+#region VU METER / UI
 
 colorama_init()
 
@@ -85,8 +88,61 @@ class Ema:
 
 WORDS_PER_SEC_EMA = Ema(alpha=0.3)
 RMS_DBFS_EMA = Ema(alpha=0.3)
+#endregion
 
+#region audio monitor process
+monitor_proc = None
 
+def start_audio_monitor(stream_url: str, monitor_cfg: dict):
+    """Spawn ffplay to monitor the live audio."""
+    global monitor_proc
+    if monitor_proc and monitor_proc.poll() is None:
+        return  # already running
+
+    vol = float(monitor_cfg.get("volume", 1.0))
+    vol_filter = f"volume={vol:.2f}"
+
+    if stream_url.startswith("audio="):
+        # Windows mic device
+        cmd = [
+            "ffplay",
+            "-loglevel", "warning",
+            "-nodisp",
+            "-f", "dshow",
+            "-i", stream_url,
+            "-af", vol_filter,
+        ]
+    else:
+        # Network stream
+        cmd = [
+            "ffplay",
+            "-loglevel", "warning",
+            "-nodisp",
+            "-autoexit",
+            stream_url,
+            "-af", vol_filter,
+        ]
+
+    try:
+        monitor_proc = subprocess.Popen(cmd)
+        print(f"[worker] 🔊 Audio monitor started (pid {monitor_proc.pid})")
+    except FileNotFoundError:
+        print("[worker] ⚠ ffplay not found. Make sure FFmpeg is installed and on PATH.")
+    except Exception as e:
+        print(f"[worker] ⚠ Could not start audio monitor: {e}")
+
+def stop_audio_monitor():
+    """Cleanly stop the ffplay monitor."""
+    global monitor_proc
+    if monitor_proc and monitor_proc.poll() is None:
+        try:
+            monitor_proc.terminate()
+            monitor_proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            monitor_proc.kill()
+        print("[worker] 🔇 Audio monitor stopped.")
+    monitor_proc = None
+#endregion
 
 # ──────────────────────────────────────────────────────────────
 # 1. FIND AVAILABLE CARTRIDGES
@@ -109,12 +165,17 @@ for i, name in enumerate(cartridge_names, 1):
     print(f" {i}. {name}")
 choice = input("\nSelect cartridge number to load: ").strip()
 
+
 try:
     choice_idx = int(choice) - 1
     CARTRIDGE = cartridge_names[choice_idx]
 except (ValueError, IndexError):
     print("❌ Invalid selection.")
     sys.exit(1)
+
+
+
+    
 
 # ──────────────────────────────────────────────────────────────
 # 2. LOAD THE CHOSEN CARTRIDGE
@@ -149,10 +210,21 @@ WHISPER_COMPUTE = SETTINGS.get("whisper_compute", "int8")
 DB_URL = os.getenv("DATABASE_URL", "postgresql://postgres:radio@localhost:5432/postgres")
 RDS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
+MONITOR = getattr(cart, "MONITOR", {"enabled": False, "volume": 1.0})
+
 print(f"\n[worker] 🎮 Loaded cartridge: {Fore.CYAN}{CARTRIDGE}{Style.RESET_ALL}")
 print(f"[worker] Station: {Fore.YELLOW}{DISPLAY_NAME}{Style.RESET_ALL}")
 print(f"[worker] Stream URL: {STREAM_URL}")
 print(f"[worker] Settings: {SETTINGS}\n")
+
+
+
+if MONITOR.get("enabled", False):
+    start_audio_monitor(STREAM_URL, MONITOR)
+
+
+
+
 
 # ──────────────────────────────────────────────────────────────
 # 3. SETUP CONNECTIONS
@@ -250,6 +322,65 @@ def publish(rds, event):
 # 6. MAIN LOOP
 # ──────────────────────────────────────────────────────────────
 
+
+monitor_proc = None
+
+def start_audio_monitor(stream_url: str, monitor_cfg: dict):
+    """
+    Spawns an ffplay process to monitor the audio in real time.
+    - Supports http(s) streams and Windows dshow microphones ("audio=...").
+    """
+    global monitor_proc
+    if monitor_proc and monitor_proc.poll() is None:
+        return  # already running
+
+    vol = float(monitor_cfg.get("volume", 1.0))
+    vol_filter = f"volume={vol:.2f}"
+
+    if stream_url.startswith("audio="):
+        # Windows microphone via DirectShow
+        cmd = [
+            "ffplay",
+            "-loglevel", "warning",
+            "-nodisp",
+            "-f", "dshow",
+            "-i", stream_url,
+            "-af", vol_filter,
+        ]
+    else:
+        # Network stream (http/s, icecast)
+        cmd = [
+            "ffplay",
+            "-loglevel", "warning",
+            "-nodisp",
+            "-autoexit",  # ends if source ends; for live it keeps running
+            stream_url,
+            "-af", vol_filter,
+        ]
+
+    try:
+        monitor_proc = subprocess.Popen(cmd)
+        print(f"[worker] 🔊 Audio monitor started (pid {monitor_proc.pid})")
+    except FileNotFoundError:
+        print("[worker] ⚠ ffplay not found. Install FFmpeg and ensure ffplay is on PATH.")
+    except Exception as e:
+        print(f"[worker] ⚠ Could not start audio monitor: {e}")
+
+def stop_audio_monitor():
+    global monitor_proc
+    if monitor_proc and monitor_proc.poll() is None:
+        try:
+            monitor_proc.terminate()
+            try:
+                monitor_proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                monitor_proc.kill()
+        except Exception:
+            pass
+        finally:
+            print("[worker] 🔇 Audio monitor stopped.")
+    monitor_proc = None
+
 def main():
     last_text = ""
     vu_bar_str = ""
@@ -334,4 +465,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print(f"\n[worker] {Fore.YELLOW}Stopped.{Style.RESET_ALL}")
+        print("\n[worker] Stopping…")
+    finally:
+        stop_audio_monitor()
+
