@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raidio Dashboard</title>
+  <style>
+    body{margin:0;font-family:system-ui,sans-serif;background:#0d1117;color:#e6edf3;height:100vh;display:flex;flex-direction:column}
+    header{background:#161b22;border-bottom:1px solid #30363d;padding:10px 16px;display:flex;justify-content:space-between;align-items:center}
+    main{display:flex;flex:1;overflow:hidden}
+    #transcript{width:33%;border-right:1px solid #30363d;padding:12px;overflow:auto}
+    #info{flex:1;padding:16px;overflow:auto}
+    .line{margin:8px 0;line-height:1.5}
+    .time{color:#9fb1c4;font-size:12px;margin-right:6px}
+    .highlight{background:rgba(88,166,255,.12);border-left:3px solid #58a6ff;padding-left:8px;border-radius:4px}
+    #heatmap{border-top:1px solid #30363d;background:#161b22;padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px}
+    .chip{display:inline-block;padding:4px 8px;border-radius:10px;background:rgba(138,215,255,.12);border:1px solid rgba(138,215,255,.25);color:#cfe6ff}
+    #reloadBtn:hover { filter: brightness(1.05); }
+
+  </style>
+</head>
+<body>
+<header>
+  <div>🎙️ Raidio Live Dashboard</div>
+  <div style="display:flex; gap:10px; align-items:center">
+    <button id="reloadBtn" style="background:#238636;border:1px solid #2ea043;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer">
+      ↻ Reload
+    </button>
+    <div id="status" style="color:#9fb1c4">Disconnected</div>
+  </div>
+</header>
+
+
+<main>
+  <section id="transcript"></section>
+  <section id="info">
+    <h2 style="color:#58a6ff;margin-top:0">Live Info</h2>
+    <div id="entities" class="chips"></div>
+  </section>
+</main>
+
+<div id="heatmap"></div>
+
+<script>
+// clear transcript/heatmap/entities on page load
+window.addEventListener("pageshow", () => {
+  document.getElementById("transcript").innerHTML = "";
+  document.getElementById("heatmap").innerHTML = "";
+  document.getElementById("entities").innerHTML = "";
+  sessionStorage.clear();
+});
+
+(() => {
+  const WS_URL   = "{{ ws_url }}";
+  const transcript = document.getElementById("transcript");  // uses .line/.time/.highlight styles
+  const info       = document.getElementById("info");
+  const heatmap    = document.getElementById("heatmap");     // uses .chip style
+  const entitiesEl = document.getElementById("entities");
+  const statusEl   = document.getElementById("status");
+  const reloadBtn  = document.getElementById("reloadBtn");
+
+  let ws = null, retryTimer = null;
+  let freq = Object.create(null);
+  const seen = new Set();
+
+  /* ---------- helpers that PRESERVE your styles ---------- */
+  function clearNode(n){ if(!n) return; while(n.firstChild) n.removeChild(n.firstChild); }
+  function lineKey(d){ return d.chunk_id || `${d.t0||""}|${(d.text||"").slice(0,120)}`; }
+
+  function highlight(text, terms){
+    if(!terms?.length) return text||"";
+    const esc = terms.map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+    const re  = new RegExp(`(\\b(?:${esc.join("|")})\\b)`,"gi");
+    return (text||"").replace(re, m => `<span class="highlight">${m}</span>`);
+  }
+
+  function addLine(d, terms=[]){
+    const key = lineKey(d);
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    const row  = document.createElement("div");
+    row.className = "line";                      // ← keep your .line style
+
+    const time = document.createElement("span");
+    time.className = "time";                     // ← keep your .time style
+    time.textContent = d.t0 ? new Date(d.t0).toLocaleTimeString() : "";
+
+    const text = document.createElement("span");
+    text.innerHTML = highlight(d.text || "", terms); // ← uses .highlight style in CSS
+
+    row.append(time, document.createTextNode(" "), text);
+    transcript.appendChild(row);                 // append to bottom
+    transcript.scrollTop = transcript.scrollHeight;
+  }
+
+  function bumpHeat(terms){
+    const uniq = new Set(terms.map(t => (t||"").toLowerCase()).filter(Boolean));
+    uniq.forEach(t => freq[t] = (freq[t]||0) + 1);
+    renderHeatmap();
+  }
+
+  function renderHeatmap(){
+    clearNode(heatmap);
+    const keys = Object.keys(freq);
+    if(!keys.length) return;
+    const max = Math.max(1, ...keys.map(k=>freq[k]));
+    keys.sort().forEach(k=>{
+      const chip = document.createElement("span");
+      chip.className = "chip";                  // ← keep your .chip style
+      chip.style.fontSize = (12 + (freq[k]/max)*22) + "px";
+      chip.textContent = k;
+      heatmap.appendChild(chip);
+    });
+  }
+
+  function renderEntities(list, lastText){
+    clearNode(entitiesEl);
+    (list||[]).slice(0,10).forEach(e=>{
+      const b = document.createElement("span");
+      b.className = "chip";                     // reuse chip style for entity tags
+      b.textContent = `${e.type || e.typ}: ${e.text || e.surface}`;
+      b.onclick = () => addLine({ t0:new Date().toISOString(), text:lastText }, [e.text || e.surface]);
+      entitiesEl.appendChild(b);
+    });
+  }
+
+  function clearUIAndState(){
+    clearNode(transcript);
+    clearNode(heatmap);
+    clearNode(entitiesEl);
+    freq = Object.create(null);
+    seen.clear();
+  }
+
+  /* ---------- data sources ---------- */
+  async function loadRecent(limit=40){
+    const res = await fetch(`/api/recent?limit=${limit}&_=${Date.now()}`, { cache:"no-store" });
+    const { items } = await res.json();
+    // render oldest → newest so latest ends up at bottom
+    items.reverse().forEach(it=>{
+      const terms = (it.entities||[]).map(e=> e.text || e.surface || "").filter(Boolean);
+      addLine(it, terms);
+      bumpHeat(terms);
+    });
+  }
+
+  function connectWS(){
+    if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+    if (ws) { try{ ws.close(1000,"reconnect"); }catch{} ws=null; }
+
+    statusEl.textContent = "Connecting…"; statusEl.style.color = "#9fb1c4";
+    ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => { statusEl.textContent = "Connected"; statusEl.style.color = "#7ff0b3"; };
+    ws.onclose = () => {
+      statusEl.textContent = "Disconnected"; statusEl.style.color = "#ff9b9b";
+      retryTimer = setTimeout(connectWS, 4000);
+    };
+    ws.onerror = () => { statusEl.textContent = "WebSocket error"; statusEl.style.color = "#ff9b9b"; };
+
+    ws.onmessage = ev => {
+      let d; try { d = JSON.parse(ev.data); } catch { d = { text: ev.data }; }
+      const terms = (d.entities||[]).map(e=> e.text || e.surface || "").filter(Boolean);
+      addLine(d, terms);
+      bumpHeat(terms);
+      renderEntities(d.entities||[], d.text||"");
+    };
+  }
+
+  async function reloadChat({ reconnect=true } = {}){
+    statusEl.textContent = "Reloading…";
+    clearUIAndState();
+    if (reconnect) connectWS();
+    await loadRecent(40);
+    statusEl.textContent = "Connected";
+  }
+
+  if (reloadBtn) reloadBtn.addEventListener("click", () => reloadChat({ reconnect:true }));
+
+  // boot
+  (async function init(){
+    clearUIAndState();
+    await loadRecent(40);
+    connectWS();
+  })();
+})();
+</script>
+
+
+
+
+</body>
+</html>

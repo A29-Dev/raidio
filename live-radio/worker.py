@@ -14,6 +14,8 @@ from rich.console import Group
 from colorama import Fore, Style, init as colorama_init
 
 
+EVENT_CHANNEL = os.getenv("EVENT_CHANNEL", "radio_events")
+
 #region VU METER / UI
 
 colorama_init()
@@ -316,7 +318,7 @@ def extract_entities(text):
     return [{"text": e.text, "type": e.label_} for e in doc.ents]
 
 def publish(rds, event):
-    rds.publish("radio_events", json.dumps(event))
+    rds.publish(EVENT_CHANNEL, json.dumps(event, ensure_ascii=False))
 
 # ──────────────────────────────────────────────────────────────
 # 6. MAIN LOOP
