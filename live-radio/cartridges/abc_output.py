@@ -3,10 +3,10 @@ DISPLAY_NAME = "ABC Radio National WA"
 STREAM_URL = "https://live-radio02.mediahubaustralia.com/2RNW/mp3"
 
 SETTINGS = {
-    "chunk_seconds": 4,
+    "chunk_seconds": 5,
     "whisper_model": "base.en",
-    "whisper_device": "cpu",
-    "whisper_compute": "int8",
+    "whisper_device": "cuda",
+    "whisper_compute": "float16",
 }
 
 MONITOR = {
@@ -22,6 +22,12 @@ VU = {
     "warn_high": -6.0,     # above this = risk of clipping/distortion
     "bar_floor": -60.0,    # left edge of the VU bar
     "bar_ceiling": 0.0,    # right edge (0 dBFS is full scale)
+}
+
+ENRICH = {
+    "wiki": True,    # fetch Wikipedia summary for PERSON/ORG/GPE/LOC
+    "map":  True,    # include a map URL for the entity
+    "min_chars": 3,  # ignore super-short tokens
 }
 
 AWARE_RULES = {

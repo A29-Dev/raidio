@@ -4,7 +4,7 @@
 
 STATION_ID = "local_mic"
 DISPLAY_NAME = "Local Microphone Input"
-STREAM_URL = "audio=Headset Microphone (2- SteelSeries Arctis Nova 5X)"  # special flag handled by worker.py
+STREAM_URL = "audio=Stereo Mix (Realtek(R) Audio)"  # special flag handled by worker.py
 
 SETTINGS = {
     "chunk_seconds": 10,          # longer chunk = clearer speech capture
@@ -32,6 +32,8 @@ AWARE_RULES = {
     },
     "entities": {"PERSON": True},
 }
+
+ENRICH = {"wiki": True, "map": True, "min_chars": 3}
 
 def preprocess_text(text: str) -> str:
     for kw in ("test", "hello", "radio", "keyword"):

@@ -1,7 +1,38 @@
+import requests
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.utils import timezone
 from .models import Chunk, Entity
+from django.views.decorators.http import require_GET
+from django.utils.text import slugify
+
+
+@require_GET
+def wiki_summary(request):
+    """Proxy to Wikipedia Summary API."""
+    title = request.GET.get("title", "").strip()
+    if not title:
+        return JsonResponse({"ok": False, "error": "missing title"}, status=400)
+
+    # Basic normalization (Wikipedia likes Title_Case)
+    norm = "_".join(w.capitalize() for w in title.split())
+    url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{norm}"
+
+    try:
+        r = requests.get(url, timeout=4)
+        if r.status_code == 404:
+            return JsonResponse({"ok": False, "error": "not found"}, status=404)
+        r.raise_for_status()
+        data = r.json()
+        return JsonResponse({
+            "ok": True,
+            "title": data.get("title"),
+            "extract": data.get("extract"),
+            "thumbnail": (data.get("thumbnail") or {}).get("source"),
+            "content_urls": (data.get("content_urls") or {}).get("desktop", {}),
+        })
+    except requests.RequestException as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=502)
 
 
 def home(request):

@@ -30,6 +30,12 @@ AWARE_RULES = {
     "entities": {"PERSON": True},
 }
 
+ENRICH = {
+    "wiki": True,    # fetch Wikipedia summary for PERSON/ORG/GPE/LOC
+    "map":  True,    # include a map URL for the entity
+    "min_chars": 3,  # ignore super-short tokens
+}
+
 def preprocess_text(text: str) -> str:
     return text
 
