@@ -25,7 +25,12 @@ VU = {
 }
 
 AWARE_RULES = {
-    "keywords": {"budget": {"case_sensitive": False}},
+    "keywords": {
+        "budget": {"case_sensitive": False},
+        "election": {"case_sensitive": False},
+        "parliament": {"case_sensitive": False},
+        "Emergency": {"case_sensitive": False},
+    },
     "entities": {"PERSON": True},
 }
 

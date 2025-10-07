@@ -1,6 +1,6 @@
-STATION_ID = "vision_christian_radio"
-DISPLAY_NAME = "Vision Christian Radio"
-STREAM_URL = "https://streams2.vision.org.au/vision.mp3"
+STATION_ID = "Nova919_Output"
+DISPLAY_NAME = "Nova919"
+STREAM_URL = "https://playerservices.streamtheworld.com/api/livestream-redirect/NOVA_969.mp3"
 
 SETTINGS = {
     "chunk_seconds": 4,
@@ -25,8 +25,9 @@ VU = {
 }
 
 AWARE_RULES = {
-    "keywords": {"budget": {"case_sensitive": False}},
-    "Jesus": {"case_sensitive": False},
+    "keywords": {
+        "Nova": {"case_sensitive": False},
+    },
     "entities": {"PERSON": True},
 }
 

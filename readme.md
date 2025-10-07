@@ -38,6 +38,10 @@ RADIO utilizes a local ai to interpret live audio feeds.
 
 ```python worker.py```
 
+```venv-web\Scripts\activate```
+
+```python3 manage.py runserver <port>```
+
 ## Requirements
 
 Please ensure you have the following set up on your dev environment. This project is developed on Windows, however all Requirements have alternatives on Mac and Linux.

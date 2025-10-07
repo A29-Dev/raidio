@@ -1,12 +1,12 @@
-STATION_ID = "vision_christian_radio"
-DISPLAY_NAME = "Vision Christian Radio"
-STREAM_URL = "https://streams2.vision.org.au/vision.mp3"
+STATION_ID = "ABC_Goldfields_Esperance_Output"
+DISPLAY_NAME = "ABC Goldfields Esperance"
+STREAM_URL = "https://live-radio02.mediahubaustralia.com/6KLGW/mp3/;"
 
 SETTINGS = {
-    "chunk_seconds": 4,
+    "chunk_seconds": 5,
     "whisper_model": "base.en",
-    "whisper_device": "cpu",
-    "whisper_compute": "int8",
+    "whisper_device": "cuda",
+    "whisper_compute": "float16",
 }
 
 MONITOR = {
@@ -25,8 +25,9 @@ VU = {
 }
 
 AWARE_RULES = {
-    "keywords": {"budget": {"case_sensitive": False}},
-    "Jesus": {"case_sensitive": False},
+    "keywords": {
+        "Esperance": {"case_sensitive": False},
+    },
     "entities": {"PERSON": True},
 }
 
