@@ -1,7 +1,9 @@
 
 # RAIDIO - Live Audio At a Glance
 
-RADIO utilizes a local ai to interpret live audio feeds.
+RADIO is an app that shows relevant information in a dashboard captured from an audio source
+
+Using a proprietary **Cartridge** and **Expansion** system, RAIDIO can understand the context of the media you're listening to and enhance your audio experience.
 
 <img width="1914" height="1034" alt="image" src="https://github.com/user-attachments/assets/e088a326-29ed-4222-a135-af56f6445f64" />
 
