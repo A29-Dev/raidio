@@ -3,6 +3,9 @@
 
 RADIO utilizes a local ai to interpret live audio feeds.
 
+<img width="1914" height="1034" alt="image" src="https://github.com/user-attachments/assets/e088a326-29ed-4222-a135-af56f6445f64" />
+
+
 ## Features
 ### Implemented
 ✅ Live transcript of audio stream via www, local files, mic input or system output
