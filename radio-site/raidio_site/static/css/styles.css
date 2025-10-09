@@ -1,0 +1,123 @@
+/* ------------------------------
+   Theme & Base
+--------------------------------*/
+:root{
+  --bg:#0c1117; --bg-soft:#0f1620; --panel:#0f1620; --panel2:#0b1420;
+  --text:#d5deea; --muted:#9fb1c4; --border:#223247; --accent:#58a6ff;
+  --chip:#10283f; --chip-br:#1e4263; --ok:#7ff0b3; --warn:#ffd166; --bad:#ff9b9b;
+
+  /* One source of truth for icon sizing (logo + topbar icons) */
+  --icon-size:22px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial;
+}
+
+/* ------------------------------
+   Top Bar
+--------------------------------*/
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px; border-bottom:1px solid var(--border);
+  background:var(--bg-soft); position:sticky; top:0; z-index:10;
+}
+
+.topbar-left{ display:flex; align-items:center; gap:10px; }
+.app-title{
+  font-size:1.05rem; line-height:1; font-weight:600; color:var(--accent);
+  white-space:nowrap;
+}
+.logo{
+  height:var(--icon-size); width:auto; display:block; flex:0 0 auto;
+}
+.status{ font-size:12px; color:var(--muted); }
+.spacer{ flex:1; }
+
+/* Generic button (if you still use it) */
+.btn{
+  border:1px solid var(--border); background:#152238; color:#e7f2ff;
+  padding:6px 10px; border-radius:8px; cursor:pointer; transition:filter .2s ease;
+}
+.btn:hover{ filter:brightness(1.08); }
+
+/* Right-side icon buttons */
+.topbar-actions{ display:flex; align-items:center; gap:.5rem; }
+
+.icon-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:38px; height:34px; padding:0; cursor:pointer;
+  border:1px solid var(--border); background:var(--panel); border-radius:10px;
+  transition:transform .12s ease, background .2s, border-color .2s, box-shadow .2s;
+}
+.icon-btn:hover{ background:var(--panel2); border-color:var(--chip-br); transform:translateY(-1px); }
+.icon-btn:active{ transform:translateY(0); }
+.icon-btn:focus-visible{
+  outline:2px solid var(--accent); outline-offset:2px;
+  box-shadow:0 0 0 2px rgba(88,166,255,.15);
+}
+
+/* Icon images inside the buttons */
+.icon-btn img{
+  width:18px; height:18px;
+  /* default tint (matches reload/discord/github accent) */
+  filter: invert(64%) sepia(84%) saturate(750%) hue-rotate(181deg) brightness(100%) contrast(97%);
+}
+/* Accent-tinted versions (GitHub/Discord/Reload) */
+.icon-btn.accent img{
+  filter: invert(64%) sepia(84%) saturate(750%) hue-rotate(181deg) brightness(100%) contrast(97%);
+}
+/* Ko-fi uses native colors */
+.icon-btn.kofi img{ filter:none; }
+
+/* ------------------------------
+   Main Layout
+--------------------------------*/
+.wrap{
+  display:grid; grid-template-columns:1fr 2fr; gap:16px;
+  padding:12px 14px; height:calc(100vh - 48px);
+}
+
+/* Panels */
+.panel,
+.info{
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:12px; display:flex; flex-direction:column; min-height:0;
+}
+.panel h2{
+  margin:0; padding:10px 12px; border-bottom:1px solid var(--border);
+  font-size:14px; color:var(--accent);
+}
+.transcript{ padding:10px 12px; overflow:auto; flex:1; min-height:0; }
+.line{ margin:0 0 6px; white-space:pre-wrap; }
+.time{ color:#7b8aa0; margin-right:6px; font-variant-numeric:tabular-nums; }
+
+/* Info area */
+.info-body{ padding:12px; overflow:auto; flex:1; min-height:0; }
+.card-grid{
+  display:grid; gap:12px; align-content:start;
+  grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
+}
+
+/* Cards */
+.info-card{
+  background:var(--panel2); border:1px solid var(--border); border-radius:12px;
+  padding:12px; color:var(--text);
+  box-shadow:0 1px 0 rgba(0,0,0,.4), 0 8px 24px rgba(8,15,25,.24);
+  display:flex; flex-direction:column; min-height:170px;
+}
+.chips{ margin-bottom:8px; }
+.chip{
+  display:inline-flex; align-items:center;
+  font-size:11px; line-height:1; padding:6px 8px; border-radius:999px;
+  border:1px solid var(--chip-br); color:#99c3f0; background:var(--chip);
+}
+.header{ display:flex; gap:10px; align-items:flex-start; margin-bottom:6px; }
+.thumb{
+  width:64px; height:64px; border-radius:8px; object-fit:cover;
+  background:#151e2a; border:1px solid #253247; flex:0 0 64
+px;
+}

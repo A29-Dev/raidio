@@ -4,119 +4,47 @@
   <meta charset="utf-8" />
   <title>Raidio Live Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{
-      --bg:#0c1117; --bg-soft:#0f1620; --panel:#0f1620; --panel2:#0b1420;
-      --text:#d5deea; --muted:#9fb1c4; --border:#223247; --accent:#58a6ff;
-      --chip:#10283f; --chip-br:#1e4263; --ok:#7ff0b3; --warn:#ffd166; --bad:#ff9b9b;
-    }
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
-    }
 
-    /* Top bar */
-    .topbar{
-      display:flex; align-items:center; gap:12px;
-      padding:10px 14px; border-bottom:1px solid var(--border); background:#0b1320;
-      position:sticky; top:0; z-index:10;
-    }
-    .app-title{ font-weight:600; color:var(--accent); }
-    .spacer{ flex:1 }
-    .btn{
-      border:1px solid var(--border); background:#152238; color:#e7f2ff;
-      padding:6px 10px; border-radius:8px; cursor:pointer;
-    }
-    .btn:hover{ filter:brightness(1.08); }
-    .status{ font-size:12px; color:var(--muted); }
-
-    /* Two-column layout */
-    .wrap{
-      display:grid; grid-template-columns: 1fr 2fr; gap:16px;
-      padding:12px 14px; height:calc(100vh - 48px);
-    }
-
-    /* Transcript (left) */
-    .panel{
-      background:var(--panel); border:1px solid var(--border); border-radius:12px;
-      display:flex; flex-direction:column; min-height:0;
-    }
-    .panel h2{
-      margin:0; padding:10px 12px; border-bottom:1px solid var(--border); font-size:14px; color:var(--accent);
-    }
-    .transcript{
-      padding:10px 12px; overflow:auto; flex:1; min-height:0;
-    }
-    .line{ margin:0 0 6px; white-space:pre-wrap; }
-    .time{ color:#7b8aa0; margin-right:6px; font-variant-numeric:tabular-nums; }
-
-    /* Info grid (right) */
-    .info{
-      background:var(--panel); border:1px solid var(--border); border-radius:12px;
-      display:flex; flex-direction:column; min-height:0;
-    }
-    .info-body{
-      padding:12px; overflow:auto; flex:1; min-height:0;
-    }
-    .card-grid{
-      display:grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr));
-      gap:12px; align-content:start;
-    }
-
-    /* Cards */
-    .info-card{
-      background:var(--panel2); border:1px solid var(--border); border-radius:12px;
-      padding:12px; color:var(--text); box-shadow:0 1px 0 rgba(0,0,0,.4), 0 8px 24px rgba(8,15,25,.24);
-      display:flex; flex-direction:column; min-height:170px;
-    }
-    .chips{ margin-bottom:8px; }
-    .chip{
-      display:inline-flex; align-items:center;
-      font-size:11px; line-height:1; padding:6px 8px; border-radius:999px;
-      border:1px solid var(--chip-br); color:#99c3f0; background:var(--chip);
-    }
-    .header{ display:flex; gap:10px; align-items:flex-start; margin-bottom:6px; }
-    .thumb{
-      width:64px; height:64px; border-radius:8px; object-fit:cover; background:#151e2a; border:1px solid #253247;
-      flex:0 0 64px;
-    }
-    .title{ margin:0; font-size:15px; line-height:1.3; color:#8fc7ff; font-weight:600; }
-    .extract{
-      margin:6px 0 0; font-size:13px; color:#c2cee1;
-      display:-webkit-box; -webkit-line-clamp:4; line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;
-    }
-    .actions{ margin-top:auto; display:flex; gap:8px; }
-    .a-btn{ text-decoration:none; border:1px solid var(--border); background:#17314a; color:#e7f2ff; padding:6px 10px; border-radius:8px; font-size:12px; }
-    .a-btn:hover{ filter:brightness(1.1); }
-
-    /* Heatmap chips row (optional) */
-    .heat{ padding:8px 12px; border-top:1px solid var(--border); background:#0d1726; }
-    .heat .chip{ margin-right:6px; margin-bottom:6px; }
-
-    /* Debug tray */
-    .debug{
-      position:fixed; left:12px; right:12px; bottom:10px; z-index:15;
-      background:rgba(0,0,0,.55); border:1px solid var(--border); color:#cfd8e6;
-      border-radius:10px; padding:8px; font-size:12px; backdrop-filter: blur(5px);
-      max-height:200px; overflow:auto;
-    }
-
-    @media (max-width: 980px){
-      .wrap{ grid-template-columns: 1fr; height:auto; }
-      .debug{ position:static; margin:10px 14px; }
-    }
-  </style>
+  <!-- Leaflet (for map popups) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="static/css/styles.css"></style>
 </head>
 <body>
+
+  <div id="wiki-overlay-root" aria-live="polite"></div>
 
   <!-- Top bar -->
   <div class="topbar">
     <div class="app-title">🎙️ Raidio Live Dashboard</div>
     <div class="spacer"></div>
     <button id="reloadBtn" class="btn">↻ Reload</button>
-    <div id="status" class="status">Disconnected</div>
+      <div id="status" class="status">Disconnected</div>
+
+
+  <!-- GitHub -->
+  <a class="icon-btn accent" href="https://www.google.com" target="_blank" rel="noopener" 
+     title="GitHub" aria-label="GitHub">
+    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" 
+         alt="GitHub" />
+  </a>
+
+  <!-- Discord -->
+  <a class="icon-btn accent" href="https://www.google.com" target="_blank" rel="noopener" 
+     title="Discord" aria-label="Discord">
+    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/discord.svg" 
+         alt="Discord" />
+  </a>
+
+  <!-- Ko-fi -->
+  <a class="icon-btn kofi" href="https://www.google.com" target="_blank" rel="noopener" 
+     title="Ko-fi" aria-label="Ko-fi">
+    <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="Ko-fi" />
+  </a>
+</div>
+
+
+  
   </div>
 
   <!-- Two columns -->
@@ -137,9 +65,10 @@
     </section>
   </div>
 
-  <!-- Debug tray (optional) -->
-  <div id="ws-debug" class="debug"></div>
+  <!-- Debug tray -->
+ <!-- <div id="ws-debug" class="debug"></div> -->
 
+  <!-- Main dashboard logic (unchanged from your working version) -->
   <script>
   document.addEventListener("DOMContentLoaded", () => {
     const transcriptDiv = document.getElementById("transcript");
@@ -179,9 +108,9 @@
       });
     }
 
-    // ---- Card rendering (max 9; newest first)
+    // Card renderer (kept like your version)
     function pushInfoCard(data){
-      // data: { entity, label, wiki?:{title,extract,url,thumbnail}, map?:{map_url,lat,lon} }
+      // data: { entity, label, wiki?:{title,extract,url,thumbnail}, map?:{map_url,lat,lon,label} }
       const card = document.createElement("div");
       card.className = "info-card";
 
@@ -217,11 +146,16 @@
       if (wiki.url){
         const a = document.createElement("a");
         a.href = wiki.url; a.target="_blank"; a.rel="noopener"; a.className="a-btn"; a.textContent="Open Wikipedia";
+        a.dataset.wiki = "";               // mark so overlay captures if desired
+        a.dataset.lang = "en";
+        a.dataset.title = wiki.title || "";
         actions.appendChild(a);
       }
-      if (data.map && data.map.map_url){
+      if (data.map){
         const m = document.createElement("a");
-        m.href = data.map.map_url; m.target="_blank"; m.rel="noopener"; m.className="a-btn"; m.textContent="Open Map";
+        m.href = data.map.map_url || "#"; m.className="a-btn"; m.textContent="Open Map";
+        m.dataset.lat = data.map.lat; m.dataset.lon = data.map.lon;
+        m.dataset.label = data.map.label || (wiki.title || "Location");
         actions.appendChild(m);
       }
 
@@ -230,10 +164,9 @@
       card.appendChild(actions);
 
       infoGrid.prepend(card);
-      while (infoGrid.children.length > 9) infoGrid.removeChild(infoGrid.lastElementChild);
+      while (infoGrid.children.length > 12) infoGrid.removeChild(infoGrid.lastElementChild);
     }
 
-    // ---- WebSocket
     function connectWS(){
       try{ ws && ws.close(1000,"reconnect"); }catch{}
       if (reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer=null; }
@@ -243,7 +176,6 @@
       ws.onopen = () => setStatus("Connected", "var(--ok)");
       ws.onclose = () => { setStatus("Reconnecting…", "var(--warn)"); reconnectTimer = setTimeout(connectWS, 2500); };
       ws.onerror = (e) => { setStatus("WebSocket error", "var(--bad)"); log(`[ws] error ${e?.message||""}`); };
-
       ws.onmessage = (ev) => {
         let m; try { m = JSON.parse(ev.data); } catch { m = { text:String(ev.data||"") }; }
         log(`[ws] ${ev.data}`);
@@ -257,6 +189,340 @@
     reloadBtn.addEventListener("click", () => clearUI());
     connectWS();
   });
+  </script>
+
+  <!-- Wiki overlay + Map overlay logic -->
+  <script>
+  (function(){
+    const root = document.getElementById('wiki-overlay-root');
+
+    // Intercept clicks on wiki-marked links
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a');
+      if (!a) return;
+
+      // handle map first
+      const mapEl = e.target.closest('[data-lat][data-lon]');
+      if (mapEl) {
+        e.preventDefault();
+        const lat = parseFloat(mapEl.dataset.lat);
+        const lon = parseFloat(mapEl.dataset.lon);
+        const label = mapEl.dataset.label || 'Location';
+        if (Number.isFinite(lat) && Number.isFinite(lon)) openMapOverlay({ lat, lon, label });
+        return;
+      }
+
+      const isWiki = a.dataset.wiki !== undefined ||
+        (a.hostname && a.hostname.endsWith('wikipedia.org') && a.pathname.startsWith('/wiki/'));
+      if (!isWiki) return;
+
+      e.preventDefault();
+      const lang = a.dataset.lang || (a.hostname ? a.hostname.split('.')[0] : 'en') || 'en';
+      let title = a.dataset.title;
+      if (!title && a.pathname) {
+        const m = a.pathname.match(/\/wiki\/(.+)$/);
+        title = m ? decodeURIComponent(m[1]) : a.textContent.trim();
+      }
+      if (!title) return;
+      openWikiOverlay({ lang, title });
+    });
+
+    const overlays = new Map();
+    const keyOf = ({lang, title}) => `${lang}:${title.replace(/\s+/g,'_')}`;
+
+    async function openWikiOverlay({ lang='en', title }) {
+      const key = keyOf({lang, title});
+      const existing = overlays.get(key);
+      if (existing) { focus(existing.win); return; }
+
+      const win = createWindow(title);
+      overlays.set(key, { win, lang, title });
+      focus(win);
+      setLoading(win, true);
+
+      try {
+        const url = `/wiki/${encodeURIComponent(lang)}/${encodeURIComponent(title)}/`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Load failed');
+
+        win.dataset.lang = lang;
+        win.dataset.slug = normalizeTitle(title);
+        setTitle(win, data.title || title);
+        setBody(win, data.html);
+      } catch (err) {
+        setBody(win, `<p style="color:#f88">Error loading article: ${err.message}</p>`);
+      } finally {
+        setLoading(win, false);
+      }
+    }
+
+    async function navigate(win, { lang, title }) {
+      setLoading(win, true);
+      try {
+        const url = `/wiki/${encodeURIComponent(lang)}/${encodeURIComponent(title)}/`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Load failed');
+        win.dataset.lang = lang;
+        win.dataset.slug = normalizeTitle(title);
+        setTitle(win, data.title || title);
+        setBody(win, data.html);
+      } catch (e) {
+        setBody(win, `<p style="color:#f88">Navigation failed: ${e.message}</p>`);
+      } finally {
+        setLoading(win, false);
+        focus(win);
+      }
+    }
+
+    // ===== Window helpers =====
+    function createWindow(initialTitle) {
+      const el = document.createElement('div');
+      el.className = 'wiki-window';
+      el.innerHTML = `
+        <div class="wiki-header">
+          <div class="title">${escapeHtml(initialTitle)}</div>
+          <button class="wiki-btn" data-action="google" title="Google Search">G</button>
+          <button class="wiki-btn" data-action="popout" title="Open on Wikipedia">↗</button>
+          <button class="wiki-btn" data-action="pin" title="Pin/Unpin">📌</button>
+          <button class="wiki-btn" data-action="close" title="Close">✕</button>
+        </div>
+        <div class="wiki-body"><div style="opacity:.7">Loading…</div></div>
+        <div class="wiki-footer">
+          <input type="search" placeholder="Find in article…" class="wiki-find" />
+        </div>
+        <div class="wiki-resizer"></div>
+      `;
+      root.appendChild(el);
+      focus(el);
+      makeDraggable(el, el.querySelector('.wiki-header'));
+      makeResizable(el, el.querySelector('.wiki-resizer'));
+
+      el.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const act = btn.dataset.action;
+
+        if (act === 'close') { el.remove(); return; }
+        if (act === 'pin') { el.classList.toggle('pinned'); return; }
+        if (act === 'google') {
+          const q = el.querySelector('.title')?.textContent?.trim() || '';
+          if (q) window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank', 'noopener');
+          return;
+        }
+        if (act === 'popout') {
+          const lang = el.dataset.lang || 'en';
+          const slug = el.dataset.slug;
+          const url = slug ? `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(slug)}` :
+                             `https://en.wikipedia.org/`;
+          window.open(url, '_blank', 'noopener');
+          return;
+        }
+      });
+
+      // find-in-article
+      const find = el.querySelector('.wiki-find');
+      find.addEventListener('input', () => highlight(el.querySelector('.wiki-body'), find.value));
+      return el;
+    }
+
+    function setTitle(win, title) { win.querySelector('.title').textContent = title; }
+    function setLoading(win, on) { win.style.opacity = on ? 0.92 : 1; }
+    function focus(win) {
+      Array.from(document.querySelectorAll('.wiki-window')).forEach(w => w.style.zIndex = 9999);
+      win.style.zIndex = 10000;
+    }
+
+    // Dragging / resizing
+    function makeDraggable(box, handle){
+      let sx, sy, sl, st, dragging=false;
+      handle.addEventListener('mousedown', (e)=> {
+        if (e.button !== 0) return;
+        dragging = true; focus(box);
+        sx = e.clientX; sy = e.clientY;
+        const rect = box.getBoundingClientRect();
+        sl = rect.left; st = rect.top;
+        document.body.style.userSelect='none';
+      });
+      window.addEventListener('mousemove', (e)=>{
+        if(!dragging) return;
+        const nl = sl + (e.clientX - sx);
+        const nt = st + (e.clientY - sy);
+        box.style.left = nl + 'px';
+        box.style.top = nt + 'px';
+        box.style.right = 'auto'; box.style.bottom = 'auto';
+      });
+      window.addEventListener('mouseup', ()=>{ dragging=false; document.body.style.userSelect=''; });
+    }
+    function makeResizable(box, handle){
+      let sw, sh, sx, sy, resizing=false;
+      handle.addEventListener('mousedown', (e)=>{
+        if (e.button !== 0) return;
+        resizing = true; focus(box);
+        sx = e.clientX; sy = e.clientY;
+        const rect = box.getBoundingClientRect();
+        sw = rect.width; sh = rect.height;
+        document.body.style.userSelect='none';
+      });
+      window.addEventListener('mousemove', (e)=>{
+        if(!resizing) return;
+        const nw = Math.max(360, sw + (e.clientX - sx));
+        const nh = Math.max(300, sh + (e.clientY - sy));
+        box.style.width = nw + 'px';
+        box.style.height = nh + 'px';
+      });
+      window.addEventListener('mouseup', ()=>{ resizing=false; document.body.style.userSelect=''; });
+    }
+
+    // ===== Shadow-DOM renderer (prevents CSS bleed) =====
+    function setBody(win, html) {
+      const host = win.querySelector('.wiki-body');
+      if (host._shadowRoot) host._shadowRoot.innerHTML = '';
+      const shadow = host.attachShadow({ mode: 'open' });
+      host._shadowRoot = shadow;
+
+      const style = document.createElement('style');
+      style.textContent = `
+        :host { color: inherit; }
+        * { box-sizing: border-box; }
+        body, html { all: unset; }
+        h1,h2,h3 { margin: 0.6rem 0 0.3rem 0; font-weight: 700; line-height: 1.25; }
+        p { margin: 0.5rem 0; line-height: 1.5; }
+        img { max-width: 100%; height: auto; }
+        table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
+        th, td { border: 1px solid rgba(255,255,255,0.1); padding: .25rem .4rem; vertical-align: top; }
+        a { text-decoration: underline; cursor: pointer; }
+        figure { margin: .5rem 0; }
+        figcaption { opacity: .8; font-size: .9em; }
+        .infobox, .infobox_v2 { float: none; width: 100% !important; }
+        .thumb { float: none; }
+      `;
+      shadow.appendChild(style);
+
+      const bodyWrap = document.createElement('div');
+      bodyWrap.className = 'mw-article';
+      bodyWrap.innerHTML = html; // already sanitized server-side
+      shadow.appendChild(bodyWrap);
+
+      shadow.querySelectorAll('img').forEach(img => { img.loading = 'lazy'; img.decoding = 'async'; });
+
+      shadow.addEventListener('click', (ev) => {
+        const link = ev.target.closest('a[href]');
+        if (!link) return;
+        const href = link.getAttribute('href') || '';
+        if (href.startsWith('#')) return;
+
+        const next = resolveWikiTarget(link, href);
+        if (next) {
+          ev.preventDefault();
+          const { lang, title } = next;
+          navigate(win, { lang, title });
+        } else {
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener');
+        }
+      });
+    }
+
+    // Robust wiki URL resolver
+    function resolveWikiTarget(anchorEl, href) {
+      try {
+        let url;
+        try { url = new URL(href, window.location.origin); }
+        catch { url = new URL(href, 'https://en.wikipedia.org/'); }
+
+        const host = url.hostname || '';
+        const path = url.pathname || '';
+        const search = url.search || '';
+
+        let lang = 'en';
+        if (host.endsWith('wikipedia.org')) {
+          const sub = host.split('.')[0];
+          if (sub && sub !== 'www') lang = sub;
+        }
+
+        if (/^\/wiki\/.+/.test(path)) {
+          const raw = decodeURIComponent(path.replace(/^\/wiki\//, ''));
+          return { lang, title: normalizeTitle(raw) };
+        }
+
+        if (path.startsWith('/w/index.php') && search) {
+          const params = new URLSearchParams(search);
+          const byTitle = params.get('title');
+          if (byTitle) return { lang, title: normalizeTitle(byTitle) };
+        }
+
+        if (!host || host === window.location.hostname) {
+          const raw = decodeURIComponent(href.replace(/^\.?\//, ''));
+          if (raw && !raw.startsWith('http')) return { lang, title: normalizeTitle(raw) };
+        }
+      } catch {}
+      return null;
+    }
+    function normalizeTitle(raw){ return (raw || '').trim().replace(/\s+/g,'_'); }
+
+    // Find-in-article highlighter (works on Shadow DOM host)
+    function highlight(host, q){
+      const container = host.shadowRoot ? host.shadowRoot : host;
+      container.querySelectorAll('mark._hl').forEach(m=>m.replaceWith(document.createTextNode(m.textContent)));
+      if(!q) return;
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+        acceptNode(node){ return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.REJECT; }
+      });
+      const needle = q.toLowerCase(), matches=[];
+      while(walker.nextNode()){
+        const n=walker.currentNode, i=n.nodeValue.toLowerCase().indexOf(needle);
+        if(i>=0) matches.push({n,i});
+      }
+      for(const {n,i} of matches){
+        const mark=document.createElement('mark'); mark.className='_hl';
+        mark.textContent=n.nodeValue.substr(i,q.length);
+        const before=document.createTextNode(n.nodeValue.substr(0,i));
+        const after=document.createTextNode(n.nodeValue.substr(i+q.length));
+        n.parentNode.insertBefore(before,n);
+        n.parentNode.insertBefore(mark,n);
+        n.parentNode.insertBefore(after,n);
+        n.remove();
+      }
+    }
+
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // ===== Map overlay (Leaflet) =====
+    function openMapOverlay({ lat, lon, label = 'Location' }) {
+      const win = document.createElement('div');
+      win.className = 'wiki-window';
+      win.style.width = '520px'; win.style.height = '420px';
+      win.innerHTML = `
+        <div class="wiki-header">
+          <div class="title">${escapeHtml(label)}</div>
+          <button class="wiki-btn" data-action="close" title="Close">✕</button>
+        </div>
+        <div class="wiki-body" style="padding:0">
+          <div id="map_${Date.now()}" style="width:100%;height:100%"></div>
+        </div>
+        <div class="wiki-resizer"></div>
+      `;
+      root.appendChild(win);
+      makeDraggable(win, win.querySelector('.wiki-header'));
+      makeResizable(win, win.querySelector('.wiki-resizer'));
+      win.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="close"]')) win.remove();
+      });
+
+      const mapEl = win.querySelector('[id^="map_"]');
+      const map = L.map(mapEl).setView([lat, lon], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+      L.marker([lat, lon]).addTo(map).bindPopup(label).openPopup();
+    }
+
+    // expose for the click handler at the top of this IIFE
+    window.openMapOverlay = openMapOverlay;
+  })();
   </script>
 </body>
 </html>
